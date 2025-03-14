@@ -1,13 +1,30 @@
 import React from 'react';
 import { bid } from '../types';
+import useOrderBook from '../hooks/useOrderBook';
 
 interface OrdersProps {
-    bids: bid[];
+    productId?: string;
+    tokenName?: string;
 }
 
-const Orders: React.FC<OrdersProps> = ({ bids }) => {
+const bids: bid[] = [
+  ['2997', '150'],
+  ['2996', '160'],
+  ['3000', '120'],
+  ['2995', '170'],
+  ['2994', '180'],
+  ['2999', '130'],
+  ['2998', '140'],
+  ['2993', '130'],
+];
+
+const Orders: React.FC<OrdersProps> = ({ productId, tokenName }) => {
+
+  const { orderBook } = useOrderBook(productId);
+
   return (
     <div>
+      <h2>{tokenName}</h2>
       <div>
         {bids.map(([price, quantity], index) => (
           <div 

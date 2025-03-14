@@ -1,31 +1,45 @@
 import './App.css';
-import { bid } from './types';
 import Orders from './components/orders';
 import SocketProvider from './providers/SocketProvider';
-import useOrderBook from './hooks/useOrderBook';
-
-const bids: bid[] = [
-  ['2997', '150'],
-  ['2996', '160'],
-  ['3000', '120'],
-  ['2995', '170'],
-  ['2994', '180'],
-  ['2999', '130'],
-  ['2998', '140'],
-  ['2993', '130'],
-];
+import { useEffect, useMemo, useState } from 'react';
 
 const URL = "wss://ws.etherealtest.net/v1/stream";
 
 function App() {
-  const { orderBook } = useOrderBook("ETH-USD");
+  const [selectedProductId, setSelectedProductId] = useState<string>();
+  const [ products, setProducts ] = useState<any[]>([]);
+
+  const selectedProduct = useMemo(() => {
+    return products.find(({id}) => id === selectedProductId);
+  }, [selectedProductId, products]);
+
+  useEffect(() => {
+    fetch('https://api.etherealtest.net/v1/product').then((response) => {
+      return response.json();
+    }).then((res) => {
+      const { data } = res;
+      console.log('product', data);
+      setProducts(data);
+    }).catch((err) => {
+      console.log('error', err);
+    });
+  }, [products.length]);
 
   return (
     <SocketProvider url={URL}>
       <div className="App">
         <header className="App-header">
           Order Book
-          <Orders bids={bids} />
+          <select onChange={(e) => setSelectedProductId(e.target.value)}>
+            <option key='' value=''>Please select an asset</option>
+            {products.map(({id, baseTokenName}) => (
+              <option key={id} value={id}>{baseTokenName}</option>
+            ))}
+          </select>
+          <Orders 
+            productId={selectedProduct?.id}
+            tokenName={selectedProduct?.baseTokenName} 
+          />
         </header>
       </div>
     </SocketProvider>
