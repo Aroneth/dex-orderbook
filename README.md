@@ -19,7 +19,9 @@ You will also see any lint errors in the console.
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-## Test Project Overall Summary
+## Test Project Summary
+
+Overall summary for the works have done and the future improving plan
 
 ### Features covered
 * Plain React Hooks use Context Provider to maintain a singleton Socket Client instance, for Error handling and Connection management in Singleton provider only;
