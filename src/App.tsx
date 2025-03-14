@@ -40,6 +40,11 @@ function App() {
             productId={selectedProduct?.id}
             tokenName={selectedProduct?.baseTokenName} 
           />
+          {/* // multiple hooks execution */}
+          <Orders 
+            productId={products?.[0]?.id}
+            tokenName={products?.[0]?.baseTokenName} 
+          />
         </header>
       </div>
     </SocketProvider>
