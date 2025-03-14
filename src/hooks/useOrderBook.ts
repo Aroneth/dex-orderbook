@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSocket } from "../providers/SocketProvider";
-import { BookDepth } from "../types";
+import { BookDepth, OrderUnit } from "../types";
+import { diffUpdateOrders } from "../utils/orderBook";
 
 const useOrderBook = (productId?: string) => {
-  const [orderBook, setOrderBook] = useState<BookDepth | null>(null);
+  const [asks, setAsks] = useState<OrderUnit[]>([]);
+  const [bids, setBids] = useState<OrderUnit[]>([]);
+  // Wait, Socket seems doesn't need a loading state
+  // const [isLoading, setIsLoading] = useState(true);
+
+  const isInitialUpdateRef = useRef(false);
+
   const { socket, connected } = useSocket();
 
   useEffect(() => {
@@ -14,6 +21,8 @@ const useOrderBook = (productId?: string) => {
     };
     socket.emit("subscribe", bookDepthSubscriptionMessage);
     console.log(`Subscribed BookDepth: ${productId}`);
+
+    isInitialUpdateRef.current = true;
   }, [socket, connected, productId]);
 
   useEffect(() => {
@@ -24,8 +33,21 @@ const useOrderBook = (productId?: string) => {
       console.log(`[BookDepth] Received ${message}`)
       try {
         const data: BookDepth = JSON.parse(message);
-        if (data.productId === productId) {
-          setOrderBook(data);
+        if (data.productId !== productId) return;
+
+        // Only update the whole data-set if it's the initial update
+        if (isInitialUpdateRef.current) {
+          setAsks(data.asks);
+          setBids(data.bids);
+          isInitialUpdateRef.current = false;
+        } else {
+          // update the diff data-set
+          setAsks((prevAsks) => {
+            return diffUpdateOrders(prevAsks, data.asks);
+          });
+          setBids((prevBids) => {
+            return diffUpdateOrders(prevBids, data.bids);
+          });
         }
       } catch (error) {
         console.error(`[BookDepth] Error: ${error}`);
@@ -42,7 +64,8 @@ const useOrderBook = (productId?: string) => {
   }, [connected, socket, productId]);
 
   return {
-    orderBook
+    asks,
+    bids,
   };
 }
 
