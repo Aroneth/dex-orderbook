@@ -30,8 +30,8 @@ function App() {
 
   return (
     // Socket IO Client singleton mode via Context API
-    <QueryClientProvider client={queryClient}>
-      <SocketProvider url={URL}>
+    <SocketProvider url={URL}>
+      <QueryClientProvider client={queryClient}>
         <div className="App">
           <header className="App-header">
             Order Book
@@ -52,8 +52,8 @@ function App() {
             />
           </header>
         </div>
-      </SocketProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </SocketProvider>
   );
 }
 

@@ -1,14 +1,21 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
+import { BookDepth } from '../types';
+
+type OrderCallback = (data: BookDepth) => void;
 
 interface SocketContextType {
   socket: Socket | null;
   connected: boolean;
+  subscribleBookDepth: (productId: string, subscriptionCallback: OrderCallback) => void;
+  unsubscribeBookDepth: (productId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   connected: false,
+  subscribleBookDepth: () => {},
+  unsubscribeBookDepth: () => {},
 });
 
 export const useSocket = () => {
@@ -24,6 +31,57 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
 
+  const eventCallbacksMap = useRef(new Map<string, OrderCallback[]>());
+
+  /**
+   * Handle OrderBook event
+   */
+  const handleOrderBook = useCallback((message: string) => {
+    console.log(`[BookDepth] Received ${message}`);
+    try {
+      const data = JSON.parse(message);
+      const { productId } = data;
+      const callbacks = eventCallbacksMap.current.get(productId);
+      if (callbacks) {
+        callbacks.forEach((callback) => callback(data));
+      }
+    } catch (error) {
+      console.error(`[BookDepth] Error: ${error}`);
+    }
+  }, []);
+
+  /**
+   * Add BookDepth subscription event directly to the socket for a specific productId
+   * @param productId
+   * @param subscriptionCallback
+   */
+  const subscribleBookDepth = useCallback((productId: string, subscriptionCallback: OrderCallback) => {
+    if (!socket || !connected || !productId) return;
+
+    // Each productId should have its own subscription
+    // However if multiple subscribtions were made for the same productId, the server will only keep the latest one
+    const bookDepthSubscriptionMessage = {
+      type: "BookDepth",
+      productId,
+    };
+    socket.emit("subscribe", bookDepthSubscriptionMessage);
+    console.log(`Subscribed BookDepth: ${productId}`);
+
+    const callbacks = eventCallbacksMap.current.get(productId) || [];
+    eventCallbacksMap.current.set(productId, [...callbacks, subscriptionCallback]);
+  }, [connected, socket]);
+
+  /**
+   * Remove BookDepth subscription event for a specific productId
+   * @param productId
+   */
+  const unsubscribeBookDepth = useCallback((productId: string) => {
+    eventCallbacksMap.current.delete(productId);
+  }, []);
+
+  /**
+   * Initial socket events
+   */
   const initialSocketEvents = useCallback((socketInstance: Socket) => {
     socketInstance.on("connecting", () => console.log("Attempting connection..."));
     socketInstance.on("disconnect", () => {
@@ -38,8 +96,12 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
       console.log(`Connected to ${url}`);
       setConnected(true);
     });
-  }, [url])
+    socketInstance.on("BookDepth", handleOrderBook);
+  }, [url, handleOrderBook]);
 
+  /**
+   * Initialize the socket connection
+   */
   useEffect(() => {
     const socketInstance = io(url, { transports: ["websocket"], autoConnect: false });
     setSocket(socketInstance);
@@ -57,7 +119,9 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
   return (
     <SocketContext.Provider value={{
       socket,
-      connected: socket?.connected || connected
+      connected: socket?.connected || connected,
+      subscribleBookDepth,
+      unsubscribeBookDepth
     }}>
       {children}
     </SocketContext.Provider>
