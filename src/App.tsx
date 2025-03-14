@@ -2,6 +2,9 @@ import './App.css';
 import Orders from './components/orders';
 import SocketProvider from './providers/SocketProvider';
 import { useEffect, useMemo, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
 
 const URL = "wss://ws.etherealtest.net/v1/stream";
 
@@ -26,28 +29,31 @@ function App() {
   }, [products.length]);
 
   return (
-    <SocketProvider url={URL}>
-      <div className="App">
-        <header className="App-header">
-          Order Book
-          <select onChange={(e) => setSelectedProductId(e.target.value)}>
-            <option key='' value=''>Please select an asset</option>
-            {products.map(({id, baseTokenName}) => (
-              <option key={id} value={id}>{baseTokenName}</option>
-            ))}
-          </select>
-          <Orders 
-            productId={selectedProduct?.id}
-            tokenName={selectedProduct?.baseTokenName} 
-          />
-          {/* // multiple hooks execution */}
-          <Orders 
-            productId={products?.[0]?.id}
-            tokenName={products?.[0]?.baseTokenName} 
-          />
-        </header>
-      </div>
-    </SocketProvider>
+    // Socket IO Client singleton mode via Context API
+    <QueryClientProvider client={queryClient}>
+      <SocketProvider url={URL}>
+        <div className="App">
+          <header className="App-header">
+            Order Book
+            <select onChange={(e) => setSelectedProductId(e.target.value)}>
+              <option key='' value=''>Please select an asset</option>
+              {products.map(({id, baseTokenName}) => (
+                <option key={id} value={id}>{baseTokenName}</option>
+              ))}
+            </select>
+            <Orders 
+              productId={selectedProduct?.id}
+              tokenName={selectedProduct?.baseTokenName} 
+            />
+            {/* // multiple hooks execution */}
+            <Orders 
+              productId={products?.[0]?.id}
+              tokenName={products?.[0]?.baseTokenName} 
+            />
+          </header>
+        </div>
+      </SocketProvider>
+    </QueryClientProvider>
   );
 }
 

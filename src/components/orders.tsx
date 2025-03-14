@@ -9,6 +9,7 @@ interface OrdersProps {
 
 const Orders: React.FC<OrdersProps> = ({ productId, tokenName }) => {
 
+  // const { asks, bids } = useOrderBookQuery(productId);
   const { asks, bids } = useOrderBook(productId);
 
   return (

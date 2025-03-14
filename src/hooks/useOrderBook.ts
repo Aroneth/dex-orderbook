@@ -1,22 +1,52 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSocket } from "../providers/SocketProvider";
 import { BookDepth, OrderUnit } from "../types";
 import { diffUpdateOrders } from "../utils/orderBook";
 
-// My current solution doesn't support multiple Hooks usage as Socket Client will only receive one BookDepth subscription event.
-// I will need to refactor the SocketProvider or just use React-Query to support multiple subscriptions.
 const useOrderBook = (productId?: string) => {
   const [asks, setAsks] = useState<OrderUnit[]>([]);
   const [bids, setBids] = useState<OrderUnit[]>([]);
+
   // Wait, Socket seems doesn't need a loading state, does it?
   // const [isLoading, setIsLoading] = useState(true);
 
   const isInitialUpdateRef = useRef(false);
 
   const { socket, connected } = useSocket();
+  
+  // inner function to keep the callback reference consistent
+  const handleOrderBook = useCallback(async (message: string) => {
+    try {
+      const data: BookDepth = JSON.parse(message);
+      console.log(`[BookDepth] Received ${productId}: ${data.productId}, ${data.timestamp}, ${data.previousTimestamp}`)
+
+      // Only update the data if it's the same productId as the event callback may be triggered by other components' subscriptions
+      if (data.productId !== productId) return;
+
+      // Only update the whole data-set if it's the initial update
+      if (isInitialUpdateRef.current) {
+        setAsks(data.asks);
+        setBids(data.bids);
+        isInitialUpdateRef.current = false;
+      } else {
+        // update the diff data-set
+        setAsks((prevAsks) => {
+          return diffUpdateOrders(prevAsks, data.asks);
+        });
+        setBids((prevBids) => {
+          return diffUpdateOrders(prevBids, data.bids);
+        });
+      }
+    } catch (error) {
+      console.error(`[BookDepth] Error: ${error}`);
+    }
+  }, [productId]);
 
   useEffect(() => {
     if (!socket || !connected || !productId) return;
+
+    // Each productId should have its own subscription
+    // However if multiple subscribtions were made for the same productId, the server will only keep the latest one
     const bookDepthSubscriptionMessage = {
       type: "BookDepth",
       productId,
@@ -25,45 +55,15 @@ const useOrderBook = (productId?: string) => {
     console.log(`Subscribed BookDepth: ${productId}`);
 
     isInitialUpdateRef.current = true;
-  }, [socket, connected, productId]);
-
-  useEffect(() => {
-    if (!socket || !connected) return;
-
-    // inner function to keep the callback reference consistent
-    const handleOrderBook = async (message: string) => {
-      try {
-        const data: BookDepth = JSON.parse(message);
-        console.log(`[BookDepth] Received ${productId}: ${data.productId}, ${data.timestamp}, ${data.previousTimestamp}`)
-        if (data.productId !== productId) return;
-
-        // Only update the whole data-set if it's the initial update
-        if (isInitialUpdateRef.current) {
-          setAsks(data.asks);
-          setBids(data.bids);
-          isInitialUpdateRef.current = false;
-        } else {
-          // update the diff data-set
-          setAsks((prevAsks) => {
-            return diffUpdateOrders(prevAsks, data.asks);
-          });
-          setBids((prevBids) => {
-            return diffUpdateOrders(prevBids, data.bids);
-          });
-        }
-      } catch (error) {
-        console.error(`[BookDepth] Error: ${error}`);
-      }
-    };
 
     socket.on("BookDepth", handleOrderBook);
     console.log(`Subscribed BookDepth: ${productId}`);
 
     return () => {
-      console.log(`Unsubscribed BookDepth: ${productId}`);
       socket.off("BookDepth", handleOrderBook);
+      console.log(`Unsubscribed BookDepth: ${productId}`);
     };
-  }, [connected, socket, productId]);
+  }, [connected, socket, productId, handleOrderBook]);
 
   return {
     asks,
