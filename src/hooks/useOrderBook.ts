@@ -20,19 +20,26 @@ const useOrderBook = (productId?: string) => {
     if (!socket || !connected) return;
 
     // inner function to keep the callback reference consistent
-    const handleOrderBook = async (message: BookDepth) => {
+    const handleOrderBook = async (message: string) => {
       console.log(`[BookDepth] Received ${message}`)
-      // if (data.productId === symbol) {
-      //   setOrderBook(data);
-      // }
+      try {
+        const data: BookDepth = JSON.parse(message);
+        if (data.productId === productId) {
+          setOrderBook(data);
+        }
+      } catch (error) {
+        console.error(`[BookDepth] Error: ${error}`);
+      }
     };
 
     socket.on("BookDepth", handleOrderBook);
+    console.log(`Subscribed BookDepth: ${productId}`);
 
     return () => {
+      console.log(`Unsubscribed BookDepth: ${productId}`);
       socket.off("BookDepth", handleOrderBook);
     };
-  }, [connected, socket]);
+  }, [connected, socket, productId]);
 
   return {
     orderBook

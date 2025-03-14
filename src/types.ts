@@ -1,9 +1,9 @@
-export type bid = [price:string, quantity:string];
+export type Bid = [price:string, quantity:string];
 
 export type BookDepth = {
   productId: string;
   timestamp: number;
-  bids: bid[];
+  bids: Bid[];
   asks: [string, string][];
   previousTimestamp?: number | undefined;
 }
