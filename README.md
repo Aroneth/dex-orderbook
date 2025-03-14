@@ -35,5 +35,5 @@ Overall summary for the works have done and the future improving plan
 ### TODO / Improvements
 * Current solution support multiple Components use the Hook in the same time, but meanwhile if with the same ProductId the unmount will unsubscrible all the event callbacks;
 * Why do we need a loading state for Socket? how can we tell the requesting stage?
-* I use Promise resolve for React-Query solution, but it won't consistently execute callbacks, But I reckon currently use `queryClient.setQueryData` to infinitly set cache is kind of a hacking way.
+* I was using Promise resolve as the first React-Query solution, but it won't consistently execute callbacks. But I reckon currently use `queryClient.setQueryData` to infinitly set cache is kind of a hacking way.
 * Socket return price/quantity diff list, but should we keep the whole Orders as a fixed length list? eg: price is rising if Socket keep returning the new price/quantity, the Orders data will always growing
