@@ -1,8 +1,7 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import { bid } from './types';
 import Orders from './components/orders';
+import SocketProvider from './providers/SocketProvider';
 
 const bids: bid[] = [
   ['2997', '150'],
@@ -15,14 +14,18 @@ const bids: bid[] = [
   ['2993', '130'],
 ];
 
+const URL = "wss://ws.etherealtest.net/v1/stream";
+
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        Order Book
-        <Orders bids={bids} />
-      </header>
-    </div>
+    <SocketProvider url={URL}>
+      <div className="App">
+        <header className="App-header">
+          Order Book
+          <Orders bids={bids} />
+        </header>
+      </div>
+    </SocketProvider>
   );
 }
 
