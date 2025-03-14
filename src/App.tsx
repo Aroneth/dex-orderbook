@@ -2,6 +2,7 @@ import './App.css';
 import { bid } from './types';
 import Orders from './components/orders';
 import SocketProvider from './providers/SocketProvider';
+import useOrderBook from './hooks/useOrderBook';
 
 const bids: bid[] = [
   ['2997', '150'],
@@ -17,6 +18,8 @@ const bids: bid[] = [
 const URL = "wss://ws.etherealtest.net/v1/stream";
 
 function App() {
+  const { orderBook } = useOrderBook("ETH-USD");
+
   return (
     <SocketProvider url={URL}>
       <div className="App">
