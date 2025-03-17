@@ -31,7 +31,8 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
 
-  const eventCallbacksMap = useRef(new Map<string, OrderCallback[]>());
+  // Callbacks map to keep track of the subscription callbacks for each productId
+  const bookDepthCallbacksMap = useRef(new Map<string, Map<OrderCallback, string>>());
 
   /**
    * Handle OrderBook event
@@ -41,9 +42,9 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
     try {
       const data = JSON.parse(message);
       const { productId } = data;
-      const callbacks = eventCallbacksMap.current.get(productId);
+      const callbacks = bookDepthCallbacksMap.current.get(productId);
       if (callbacks) {
-        callbacks.forEach((callback) => callback(data));
+        callbacks.forEach((_, callback) => callback(data));
       }
     } catch (error) {
       console.error(`[BookDepth] Error: ${error}`);
@@ -67,8 +68,10 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
     socket.emit("subscribe", bookDepthSubscriptionMessage);
     console.log(`Subscribed BookDepth: ${productId}`);
 
-    const callbacks = eventCallbacksMap.current.get(productId) || [];
-    eventCallbacksMap.current.set(productId, [...callbacks, subscriptionCallback]);
+    const callbacks = bookDepthCallbacksMap.current.get(productId) || new Map<OrderCallback, string>();
+    // Use the callback reference as the key to track thhe function accurately
+    callbacks.set(subscriptionCallback, productId);
+    bookDepthCallbacksMap.current.set(productId, callbacks);
   }, [connected, socket]);
 
   /**
@@ -76,7 +79,7 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
    * @param productId
    */
   const unsubscribeBookDepth = useCallback((productId: string) => {
-    eventCallbacksMap.current.delete(productId);
+    bookDepthCallbacksMap.current.delete(productId);
   }, []);
 
   /**

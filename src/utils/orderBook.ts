@@ -1,18 +1,18 @@
 import { OrderUnit } from "../types";
 
 export const diffUpdateOrders = (oldOrders: OrderUnit[], newOrders: OrderUnit[]): OrderUnit[] => {
-  const oldOrdersMap = new Map<string, string>(oldOrders);
+  const newOrdersMap = new Map<string, string>(oldOrders);
 
   newOrders.forEach(([price, quantity]) => {
-    if (oldOrdersMap.has(price)) {
-      const oldQuantity = oldOrdersMap.get(price);
+    if (newOrdersMap.has(price)) {
+      const oldQuantity = newOrdersMap.get(price);
       if (oldQuantity !== quantity) {
-        oldOrdersMap.set(price, quantity);
+        newOrdersMap.set(price, quantity);
       }
     } else {
-      oldOrdersMap.set(price, quantity);
+      newOrdersMap.set(price, quantity);
     }
   });
   // return as array from updated map
-  return Array.from(oldOrdersMap);
+  return Array.from(newOrdersMap);
 }

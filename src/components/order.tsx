@@ -18,7 +18,7 @@ const Order: FC<{ order: OrderUnit; isBid?: boolean }>= ({ order, isBid }) => {
         paddingLeft: '10px',
       }}
     >
-      {price}
+      {Number(price).toFixed(2)}
     </div>
   )
 }
