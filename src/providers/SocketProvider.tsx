@@ -37,7 +37,7 @@ const SocketProvider: React.FC<SocketProviderProps> = ({ url, children }) => {
    * Handle OrderBook event
    */
   const handleOrderBook = useCallback((message: string) => {
-    console.log(`[BookDepth] Received ${message}`);
+    // console.log(`[BookDepth] Received ${message}`);
     try {
       const data = JSON.parse(message);
       const { productId } = data;

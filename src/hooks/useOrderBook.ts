@@ -16,10 +16,10 @@ const useOrderBook = (productId?: string) => {
   
   // inner function to keep the callback reference consistent
   const handleOrderBook = useCallback(async (data: BookDepth) => {
-    console.log(`[BookDepth] Received ${productId}: ${data.productId}, ${data.timestamp}, ${data.previousTimestamp}`)
-
+    
     // Only update the whole data-set if it's the initial update
     if (isInitialUpdateRef.current) {
+      console.log(`[BookDepth] Received ${productId}: ${JSON.stringify(data)}`);
       setAsks(data.asks);
       setBids(data.bids);
       isInitialUpdateRef.current = false;
